@@ -56,7 +56,7 @@ jobs:
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use default token or your PAT
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}  # Use default token or your PAT
         with:
           files: |
             terraform-provider-quote_*
