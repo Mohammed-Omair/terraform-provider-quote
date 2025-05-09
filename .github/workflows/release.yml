@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags like v0.1.0
+
+jobs:
+  build:
+    name: Build Provider
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
+      - name: Build
+        env:
+          OS: ["windows", "linux", "darwin"]
+          ARCH: ["amd64", "arm64"]
+        run: |
+          for os in ${OS[@]}; do
+            for arch in ${ARCH[@]}; do
+              echo "Building $os/$arch"
+              GOOS=$os GOARCH=$arch go build -o "terraform-provider-quote_${os}_${arch}"
+              zip "terraform-provider-quote_${os}_${arch}.zip" "terraform-provider-quote_${os}_${arch}"
+            done
+          done
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            terraform-provider-quote_*.zip
