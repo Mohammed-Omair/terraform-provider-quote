@@ -3,12 +3,16 @@ name: Release
 on:
   push:
     tags:
-      - 'v*' # Trigger on tags like v0.1.0
+      - 'v*'  # Triggers on version tags like v0.1.0
 
 jobs:
   build:
     name: Build Provider
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [windows, linux, darwin]
+        arch: [amd64, arm64]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -20,16 +24,19 @@ jobs:
 
       - name: Build
         env:
-          OS: ["windows", "linux", "darwin"]
-          ARCH: ["amd64", "arm64"]
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
         run: |
-          for os in ${OS[@]}; do
-            for arch in ${ARCH[@]}; do
-              echo "Building $os/$arch"
-              GOOS=$os GOARCH=$arch go build -o "terraform-provider-quote_${os}_${arch}"
-              zip "terraform-provider-quote_${os}_${arch}.zip" "terraform-provider-quote_${os}_${arch}"
-            done
-          done
+          # Build binary for the target OS/arch
+          OUTPUT_NAME="terraform-provider-quote_${GOOS}_${GOARCH}"
+          if [ "$GOOS" = "windows" ]; then
+            OUTPUT_NAME="${OUTPUT_NAME}.exe"
+          fi
+          
+          go build -o $OUTPUT_NAME
+          
+          # Zip the binary
+          zip "${OUTPUT_NAME}.zip" $OUTPUT_NAME
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
