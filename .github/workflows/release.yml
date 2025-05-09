@@ -3,12 +3,18 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'  # Triggers on version tags like v0.1.0
+      - 'v*'  # Triggers on semantic version tags (e.g. v0.1.0)
+
+# Required permissions to create releases
+permissions:
+  contents: write
 
 jobs:
   build:
     name: Build Provider
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Inherit and reinforce permissions
     strategy:
       matrix:
         os: [windows, linux, darwin]
@@ -16,6 +22,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Required for release notes
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -27,19 +35,28 @@ jobs:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
         run: |
-          # Build binary for the target OS/arch
-          OUTPUT_NAME="terraform-provider-quote_${GOOS}_${GOARCH}"
+          # Generate output filename
           if [ "$GOOS" = "windows" ]; then
-            OUTPUT_NAME="${OUTPUT_NAME}.exe"
+            EXT=".exe"
+          else
+            EXT=""
           fi
-          
-          go build -o $OUTPUT_NAME
-          
-          # Zip the binary
-          zip "${OUTPUT_NAME}.zip" $OUTPUT_NAME
+          OUTPUT="terraform-provider-quote_${GOOS}_${GOARCH}${EXT}"
+
+          # Build binary
+          go build -o $OUTPUT
+
+          # Create ZIP archive
+          if [ "$GOOS" = "windows" ]; then
+            zip "${OUTPUT}.zip" $OUTPUT
+          else
+            tar -czvf "${OUTPUT}.tar.gz" $OUTPUT
+          fi
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use default token or your PAT
         with:
           files: |
-            terraform-provider-quote_*.zip
+            terraform-provider-quote_*
