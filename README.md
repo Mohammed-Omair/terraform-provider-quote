@@ -6,7 +6,7 @@ _A lightweight Terraform provider to fetch random quotes from [Quotable.io](http
 
 ---
 
-## Features ✨  
+## Features  
 - **Random Quotes**: Fetch a new quote on `terraform apply`.  
 - **Simple Attributes**: Access `content` and `author` fields.  
 - **Cross-Platform**: Pre-built binaries for **Windows, Linux, and macOS**.  
